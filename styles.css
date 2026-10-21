@@ -181,6 +181,53 @@ html, body {
   font-size: .8rem;
   margin-top: 1.4rem;
 }
+.question-count {
+  text-align: center;
+  color: rgba(255,248,232,.95);
+  font-weight: 700;
+  margin: 0 0 .75rem;
+  font-size: .95rem;
+}
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+.filter-btn {
+  appearance: none;
+  border: 0;
+  background: rgba(255,255,255,.22);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  font-size: .85rem;
+  padding: .4rem .75rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.filter-btn.active {
+  background: var(--cream);
+  color: var(--ink);
+}
+.q-tip {
+  text-align: center;
+  margin: 0 0 .55rem;
+  font-size: .95rem;
+  font-weight: 600;
+  color: rgba(20,50,74,.72);
+}
+.q-meta {
+  text-align: center;
+  font-size: .85rem;
+  color: rgba(20,50,74,.55);
+  margin: 0 0 1rem;
+}
+.btn-done {
+  width: 100%;
+  margin-top: .5rem;
+}
 
 .play-bar {
   display: grid;

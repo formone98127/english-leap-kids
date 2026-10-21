@@ -25,9 +25,13 @@ Open `index.html` in a browser, or:
 npx --yes serve .
 ```
 
-## Content note
+## Content
 
-Questions are **curated** from Leap 2A themes (school places, rules, food, feelings, travel / grammar points like *on/in*, *there is/are*, *must/mustn't*). They are rewritten for young learners — not raw OCR dumps.
+- **Easy** worlds: curated kid-friendly questions (rewritten for age ~6).
+- **Workbook / Grammar** worlds: **all questions imported** from `questions-2A.db` (OCR from Leap 2A Workbook + Grammar).
+- **Mix**: random draw from the full imported set.
+
+Imported items without a clear answer key use practice / word-pick mode so kids can still play every question.
 
 ## License
 

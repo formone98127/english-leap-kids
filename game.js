@@ -1,6 +1,18 @@
 (() => {
-  const STORAGE_KEY = "english-leap-kids-v1";
-  const worlds = window.LEAP_QUESTIONS;
+  const STORAGE_KEY = "english-leap-kids-v2";
+  const curated = window.LEAP_QUESTIONS || {};
+  const imported = window.LEAP_ALL_QUESTIONS || { worlds: {}, _meta: {} };
+
+  // Starter worlds first, then every imported unit (including All Questions)
+  const worlds = {
+    ...Object.fromEntries(
+      Object.entries(curated).map(([k, w]) => [
+        `starter_${k}`,
+        { ...w, title: `⭐ Easy: ${w.title}`, book: "starter" },
+      ])
+    ),
+    ...(imported.worlds || {}),
+  };
 
   const $ = (id) => document.getElementById(id);
   const screens = {
@@ -19,6 +31,7 @@
     locked: false,
     matchSelected: null,
     matchPairsLeft: 0,
+    filter: "all",
   };
 
   let audioCtx = null;
@@ -35,10 +48,7 @@
     const prev = loadSave();
     const total = (prev.totalStars || 0) + state.stars;
     const best = Math.max(prev.bestStreak || 0, state.bestStreak, state.streak);
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ totalStars: total, bestStreak: best })
-    );
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ totalStars: total, bestStreak: best }));
     $("total-stars").textContent = `⭐ ${total}`;
     $("best-streak").textContent = `🔥 ${best}`;
   }
@@ -73,7 +83,7 @@
     setTimeout(() => tone(784, 0.16), 180);
     const box = $("confetti");
     const colors = ["#FFD24A", "#FF6B4A", "#3DCC7A", "#2BB3FF", "#FFF8E8"];
-    for (let i = 0; i < 28; i++) {
+    for (let i = 0; i < 24; i++) {
       const p = document.createElement("i");
       p.className = "confetti-piece";
       p.style.left = `${Math.random() * 100}%`;
@@ -93,14 +103,28 @@
     return a;
   }
 
+  function filteredWorldEntries() {
+    const entries = Object.entries(worlds);
+    if (state.filter === "starter") return entries.filter(([, w]) => w.book === "starter");
+    if (state.filter === "workbook") return entries.filter(([, w]) => w.book === "workbook");
+    if (state.filter === "grammar") return entries.filter(([, w]) => w.book === "grammar");
+    if (state.filter === "allq") return entries.filter(([k]) => k === "all");
+    return entries;
+  }
+
   function renderHome() {
     const save = loadSave();
     $("total-stars").textContent = `⭐ ${save.totalStars || 0}`;
     $("best-streak").textContent = `🔥 ${save.bestStreak || 0}`;
+    const meta = imported._meta || {};
+    const countEl = $("question-count");
+    if (countEl) {
+      countEl.textContent = `${meta.total || 0} questions imported from Leap 2A`;
+    }
 
     const grid = $("world-grid");
     grid.innerHTML = "";
-    Object.entries(worlds).forEach(([key, world]) => {
+    filteredWorldEntries().forEach(([key, world]) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "world-btn";
@@ -108,8 +132,8 @@
       btn.innerHTML = `
         <span class="emoji">${world.emoji}</span>
         <span>
-          ${world.title}
-          <small>${world.items.length} fun questions</small>
+          ${escapeHtml(world.title)}
+          <small>${world.items.length} questions</small>
         </span>`;
       btn.addEventListener("click", () => startWorld(key));
       grid.appendChild(btn);
@@ -117,8 +141,8 @@
   }
 
   function shade(hex, percent) {
-    const n = hex.replace("#", "");
-    const num = parseInt(n, 16);
+    const n = String(hex || "#2BB3FF").replace("#", "");
+    const num = parseInt(n.length === 6 ? n : "2BB3FF", 16);
     let r = (num >> 16) + percent;
     let g = ((num >> 8) & 0xff) + percent;
     let b = (num & 0xff) + percent;
@@ -130,8 +154,10 @@
 
   function startWorld(key) {
     const world = worlds[key];
+    if (!world || !world.items.length) return;
     state.worldKey = key;
-    state.queue = shuffle(world.items).slice(0, Math.min(6, world.items.length));
+    const n = key === "all" ? 10 : Math.min(8, world.items.length);
+    state.queue = shuffle(world.items).slice(0, n);
     state.index = 0;
     state.stars = 0;
     state.streak = 0;
@@ -144,8 +170,15 @@
   }
 
   function updateProgress() {
-    const pct = (state.index / state.queue.length) * 100;
+    const pct = state.queue.length ? (state.index / state.queue.length) * 100 : 0;
     $("progress-fill").style.width = `${pct}%`;
+  }
+
+  function nextQuestion(delay = 700) {
+    setTimeout(() => {
+      state.index += 1;
+      renderQuestion();
+    }, delay);
   }
 
   function renderQuestion() {
@@ -163,19 +196,33 @@
     const q = state.queue[state.index];
     const stage = $("question-stage");
 
-    if (q.type === "match") {
+    if (q.type === "match" && q.pairs) {
       renderMatch(stage, q);
       return;
     }
+    if (q.type === "practice") {
+      renderPractice(stage, q);
+      return;
+    }
+    if (q.type === "pick") {
+      renderPick(stage, q);
+      return;
+    }
 
+    // mc / blank
     const promptHtml =
-      q.type === "blank"
-        ? q.prompt.replace("___", '<span class="blank-mark">?</span>')
-        : q.prompt;
+      q.type === "blank" && q.prompt.includes("___")
+        ? escapeHtml(q.prompt).replace("___", '<span class="blank-mark">?</span>')
+        : escapeHtml(q.prompt);
 
-    const choices = shuffle(q.choices);
+    const choices = shuffle(q.choices || []);
+    const tip = q.instruction
+      ? `<p class="q-tip">${escapeHtml(q.instruction)}</p>`
+      : "";
+
     stage.innerHTML = `
       <div class="q-emoji">${q.emoji || "✨"}</div>
+      ${tip}
       <p class="q-prompt">${promptHtml}</p>
       <div class="choices" role="group" aria-label="Answers">
         ${choices
@@ -188,6 +235,53 @@
 
     stage.querySelectorAll(".choice").forEach((btn) => {
       btn.addEventListener("click", () => onChoice(btn, q));
+    });
+  }
+
+  function renderPick(stage, q) {
+    const tip = q.instruction
+      ? `<p class="q-tip">${escapeHtml(q.instruction)}</p>`
+      : `<p class="q-tip">Tap the best word. Then keep leaping!</p>`;
+    const choices = shuffle(q.choices || q.wordBank || []);
+    stage.innerHTML = `
+      <div class="q-emoji">${q.emoji || "🔤"}</div>
+      ${tip}
+      <p class="q-prompt">${escapeHtml(q.prompt)}</p>
+      <div class="choices">
+        ${choices
+          .map(
+            (c) =>
+              `<button type="button" class="choice" data-answer="${escapeAttr(c)}">${escapeHtml(c)}</button>`
+          )
+          .join("")}
+      </div>`;
+    stage.querySelectorAll(".choice").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (state.locked) return;
+        state.locked = true;
+        btn.classList.add("correct");
+        onCorrect();
+        nextQuestion(650);
+      });
+    });
+  }
+
+  function renderPractice(stage, q) {
+    const tip = q.instruction
+      ? `<p class="q-tip">${escapeHtml(q.instruction)}</p>`
+      : `<p class="q-tip">Read it out loud, then tap Done!</p>`;
+    const meta = q.page ? `<p class="q-meta">p.${q.page}${q.section ? " · " + q.section : ""}</p>` : "";
+    stage.innerHTML = `
+      <div class="q-emoji">📖</div>
+      ${tip}
+      <p class="q-prompt">${escapeHtml(q.prompt)}</p>
+      ${meta}
+      <button type="button" class="btn primary btn-done" id="btn-done">Done! ⭐</button>`;
+    $("btn-done").addEventListener("click", () => {
+      if (state.locked) return;
+      state.locked = true;
+      onCorrect();
+      nextQuestion(500);
     });
   }
 
@@ -210,13 +304,12 @@
           )
           .join("")}
       </div>`;
-
     stage.querySelectorAll(".match-card").forEach((btn) => {
-      btn.addEventListener("click", () => onMatchTap(btn, q));
+      btn.addEventListener("click", () => onMatchTap(btn));
     });
   }
 
-  function onMatchTap(btn, q) {
+  function onMatchTap(btn) {
     if (state.locked || btn.classList.contains("matched")) return;
     if (state.matchSelected === btn) {
       btn.classList.remove("selected");
@@ -229,12 +322,9 @@
       tone(440, 0.08);
       return;
     }
-
     const a = state.matchSelected;
-    const sameValue = a.dataset.value === btn.dataset.value;
-    const differentKind = a.dataset.kind !== btn.dataset.kind;
-
-    if (sameValue && differentKind) {
+    const ok = a.dataset.value === btn.dataset.value && a.dataset.kind !== btn.dataset.kind;
+    if (ok) {
       a.classList.add("matched");
       btn.classList.add("matched");
       a.classList.remove("selected");
@@ -244,10 +334,7 @@
       if (state.matchPairsLeft <= 0) {
         state.locked = true;
         onCorrect();
-        setTimeout(() => {
-          state.index += 1;
-          renderQuestion();
-        }, 700);
+        nextQuestion(700);
       }
     } else {
       a.classList.remove("selected");
@@ -264,13 +351,17 @@
     const picked = btn.dataset.answer;
     const buttons = [...btn.parentElement.querySelectorAll(".choice")];
 
+    if (!q.answer) {
+      btn.classList.add("correct");
+      onCorrect();
+      nextQuestion(650);
+      return;
+    }
+
     if (picked === q.answer) {
       btn.classList.add("correct");
       onCorrect();
-      setTimeout(() => {
-        state.index += 1;
-        renderQuestion();
-      }, 750);
+      nextQuestion(750);
     } else {
       btn.classList.add("wrong");
       buttons.forEach((b) => {
@@ -278,10 +369,7 @@
         b.disabled = true;
       });
       onWrong(true);
-      setTimeout(() => {
-        state.index += 1;
-        renderQuestion();
-      }, 1100);
+      nextQuestion(1100);
     }
   }
 
@@ -309,7 +397,7 @@
     const total = state.queue.length;
     $("result-summary").textContent =
       `You got ${state.stars} of ${total} stars in ${worlds[state.worldKey].title}!`;
-    $("result-stars").textContent = "⭐".repeat(Math.max(1, state.stars)) + (state.stars ? "" : "✨");
+    $("result-stars").textContent = "⭐".repeat(Math.max(1, state.stars));
     saveStats();
     celebrate();
     showScreen("result");
@@ -320,7 +408,7 @@
   }
 
   function escapeHtml(s) {
-    return String(s)
+    return String(s ?? "")
       .replaceAll("&", "&amp;")
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;")
@@ -341,6 +429,15 @@
   });
   $("btn-again").addEventListener("click", () => {
     if (state.worldKey) startWorld(state.worldKey);
+  });
+
+  document.querySelectorAll("[data-filter]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      state.filter = btn.getAttribute("data-filter");
+      document.querySelectorAll("[data-filter]").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderHome();
+    });
   });
 
   renderHome();
