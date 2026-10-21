@@ -1,17 +1,16 @@
 (() => {
-  const STORAGE_KEY = "english-leap-kids-v2";
+  const STORAGE_KEY = "english-leap-kids-ch123-v1";
   const curated = window.LEAP_QUESTIONS || {};
   const imported = window.LEAP_ALL_QUESTIONS || { worlds: {}, _meta: {} };
 
-  // Starter worlds first, then every imported unit (including All Questions)
   const worlds = {
+    ...(imported.worlds || {}),
     ...Object.fromEntries(
       Object.entries(curated).map(([k, w]) => [
-        `starter_${k}`,
-        { ...w, title: `⭐ Easy: ${w.title}`, book: "starter" },
+        `easy_${k}`,
+        { ...w, title: `⭐ ${w.title}`, book: "easy", chapter: w.chapter },
       ])
     ),
-    ...(imported.worlds || {}),
   };
 
   const $ = (id) => document.getElementById(id);
@@ -103,12 +102,25 @@
     return a;
   }
 
+  function isPlayable(q) {
+    if (!q || !q.prompt) return false;
+    if (q.type === "match") return Array.isArray(q.pairs) && q.pairs.length >= 2;
+    if (q.type === "mc" || q.type === "blank") {
+      return Array.isArray(q.choices) && q.choices.length >= 2 && !!q.answer;
+    }
+    return false;
+  }
+
   function filteredWorldEntries() {
-    const entries = Object.entries(worlds);
-    if (state.filter === "starter") return entries.filter(([, w]) => w.book === "starter");
-    if (state.filter === "workbook") return entries.filter(([, w]) => w.book === "workbook");
-    if (state.filter === "grammar") return entries.filter(([, w]) => w.book === "grammar");
-    if (state.filter === "allq") return entries.filter(([k]) => k === "all");
+    const order = ["exam", "ch1", "ch2", "ch3", "revision", "easy_ch1_easy", "easy_ch2_easy", "easy_ch3_easy"];
+    const entries = order
+      .filter((k) => worlds[k])
+      .map((k) => [k, worlds[k]]);
+    if (state.filter === "ch1") return entries.filter(([, w]) => w.chapter === 1);
+    if (state.filter === "ch2") return entries.filter(([, w]) => w.chapter === 2);
+    if (state.filter === "ch3") return entries.filter(([, w]) => w.chapter === 3);
+    if (state.filter === "easy") return entries.filter(([, w]) => w.book === "easy");
+    if (state.filter === "exam") return entries.filter(([k]) => k === "exam" || k === "revision");
     return entries;
   }
 
@@ -116,13 +128,10 @@
     const save = loadSave();
     $("total-stars").textContent = `⭐ ${save.totalStars || 0}`;
     $("best-streak").textContent = `🔥 ${save.bestStreak || 0}`;
-    const meta = imported._meta || {};
     const countEl = $("question-count");
     if (countEl) {
-      const playableTotal = Object.values(worlds)
-        .filter((w) => w.book !== "all")
-        .reduce((n, w) => n + w.items.filter(isPlayable).length, 0);
-      countEl.textContent = `${playableTotal} playable Leap 2A questions — tap a world!`;
+      const n = (worlds.exam?.items || []).filter(isPlayable).length;
+      countEl.textContent = `Exam focus: Leap 2A Chapters 1–3 · ${n} questions`;
     }
 
     const grid = $("world-grid");
@@ -132,11 +141,12 @@
       btn.type = "button";
       btn.className = "world-btn";
       btn.style.background = `linear-gradient(135deg, ${world.color}, ${shade(world.color, -18)})`;
+      const n = world.items.filter(isPlayable).length;
       btn.innerHTML = `
         <span class="emoji">${world.emoji}</span>
         <span>
           ${escapeHtml(world.title)}
-          <small>${world.items.filter(isPlayable).length} playable</small>
+          <small>${n} playable</small>
         </span>`;
       btn.addEventListener("click", () => startWorld(key));
       grid.appendChild(btn);
@@ -155,15 +165,6 @@
     return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
   }
 
-  function isPlayable(q) {
-    if (!q || !q.prompt) return false;
-    if (q.type === "match") return Array.isArray(q.pairs) && q.pairs.length >= 2;
-    if (q.type === "mc" || q.type === "blank") {
-      return Array.isArray(q.choices) && q.choices.length >= 2 && !!q.answer;
-    }
-    return false;
-  }
-
   function startWorld(key) {
     const world = worlds[key];
     if (!world || !world.items.length) return;
@@ -173,7 +174,7 @@
       return;
     }
     state.worldKey = key;
-    const n = key === "all" ? 12 : playable.length;
+    const n = key === "exam" ? Math.min(12, playable.length) : playable.length;
     state.queue = shuffle(playable).slice(0, n);
     state.index = 0;
     state.stars = 0;
@@ -218,9 +219,8 @@
       return;
     }
 
-    // mc / blank — always graded
     const promptHtml =
-      (q.type === "blank" || (q.prompt || "").includes("___"))
+      q.type === "blank" || (q.prompt || "").includes("___")
         ? escapeHtml(q.prompt).replace("___", '<span class="blank-mark">?</span>')
         : escapeHtml(q.prompt);
 
@@ -313,13 +313,6 @@
     state.locked = true;
     const picked = btn.dataset.answer;
     const buttons = [...btn.parentElement.querySelectorAll(".choice")];
-
-    if (!q.answer) {
-      btn.classList.add("correct");
-      onCorrect();
-      nextQuestion(650);
-      return;
-    }
 
     if (picked === q.answer) {
       btn.classList.add("correct");

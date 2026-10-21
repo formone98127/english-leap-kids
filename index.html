@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="description" content="English Leap Kids — a fun English learning game for age 6, based on Longman English Leap 2A." />
-  <title>English Leap Kids</title>
+  <meta name="description" content="English Leap Kids — exam practice for Longman English Leap 2A Chapters 1–3." />
+  <title>English Leap Kids · Ch.1–3</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@600;800&display=swap" rel="stylesheet" />
@@ -27,22 +27,23 @@
       <header class="hero">
         <div class="mascot" aria-hidden="true">🦸</div>
         <h1 class="brand">English Leap</h1>
-        <p class="tagline">Fun English games for little explorers</p>
+        <p class="tagline">Exam practice · Chapters 1–3</p>
       </header>
       <div class="home-stats">
         <span id="total-stars">⭐ 0</span>
         <span id="best-streak">🔥 0</span>
       </div>
       <p id="question-count" class="question-count"></p>
-      <div class="filter-bar" role="tablist" aria-label="Filter worlds">
+      <div class="filter-bar" role="tablist" aria-label="Filter chapters">
         <button type="button" class="filter-btn active" data-filter="all">All</button>
-        <button type="button" class="filter-btn" data-filter="starter">Easy</button>
-        <button type="button" class="filter-btn" data-filter="workbook">Workbook</button>
-        <button type="button" class="filter-btn" data-filter="grammar">Grammar</button>
-        <button type="button" class="filter-btn" data-filter="allq">Mix</button>
+        <button type="button" class="filter-btn" data-filter="exam">Exam</button>
+        <button type="button" class="filter-btn" data-filter="ch1">Ch.1</button>
+        <button type="button" class="filter-btn" data-filter="ch2">Ch.2</button>
+        <button type="button" class="filter-btn" data-filter="ch3">Ch.3</button>
+        <button type="button" class="filter-btn" data-filter="easy">Easy</button>
       </div>
       <nav class="world-grid" id="world-grid" aria-label="Choose a world"></nav>
-      <p class="credit">All questions imported from Longman English Leap 2A</p>
+      <p class="credit">Longman English Leap 2A · Chapters 1–3 only</p>
     </section>
 
     <!-- PLAY -->
@@ -76,8 +77,8 @@
 
   <div id="confetti" aria-hidden="true"></div>
 
-  <script src="data/questions.js?v=3"></script>
-  <script src="data/all-questions.js?v=3"></script>
-  <script src="game.js?v=3"></script>
+  <script src="data/questions.js?v=4"></script>
+  <script src="data/all-questions.js?v=4"></script>
+  <script src="game.js?v=4"></script>
 </body>
 </html>

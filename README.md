@@ -1,38 +1,29 @@
-# English Leap Kids
+# English Leap Kids · Ch.1–3
 
-A cheerful English learning game for about age **6**, inspired by **Longman English Leap 2A**.
+Exam practice game for **Longman English Leap 2A, Chapters 1–3** (age ~6).
 
-Play five short worlds:
+## Scope
 
-- School Places
-- Be Good! (rules)
-- Yummy Food
-- How Do You Feel?
-- Getting Around
+| Chapter | Theme | Grammar focus |
+|---------|--------|----------------|
+| **1** | Places at school | `on` / `in`, There is/are, Is there…? |
+| **2** | Please be good | Instructions, `must` / `mustn't`, `can` / `can't` |
+| **3** | Sharing food | Plurals, `like`, `a` / `an` / `some` |
 
-Big buttons, stars, sound pops, and match / multiple-choice / fill-in games. Progress (stars & streak) is saved in the browser.
+Also includes **Revision (Ch.1–3)** and an **Exam Mix**.
 
-## Play online
+## Play
 
-After GitHub Pages is on:  
-**https://formone98127.github.io/english-leap-kids/**
+https://formone98127.github.io/english-leap-kids/
 
 ## Run locally
 
-Open `index.html` in a browser, or:
+Open `index.html`, or:
 
 ```bash
 npx --yes serve .
 ```
 
-## Content
-
-- **Easy** worlds: curated kid-friendly questions (rewritten for age ~6).
-- **Workbook / Grammar** worlds: **all questions imported** from `questions-2A.db` (OCR from Leap 2A Workbook + Grammar).
-- **Mix**: random draw from the full imported set.
-
-Imported items without a clear answer key use practice / word-pick mode so kids can still play every question.
-
 ## License
 
-MIT — free for learning and fun.
+MIT
