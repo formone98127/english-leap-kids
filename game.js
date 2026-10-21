@@ -119,7 +119,10 @@
     const meta = imported._meta || {};
     const countEl = $("question-count");
     if (countEl) {
-      countEl.textContent = `${meta.total || 0} questions imported from Leap 2A`;
+      const playableTotal = Object.values(worlds)
+        .filter((w) => w.book !== "all")
+        .reduce((n, w) => n + w.items.filter(isPlayable).length, 0);
+      countEl.textContent = `${playableTotal} playable Leap 2A questions — tap a world!`;
     }
 
     const grid = $("world-grid");
@@ -133,7 +136,7 @@
         <span class="emoji">${world.emoji}</span>
         <span>
           ${escapeHtml(world.title)}
-          <small>${world.items.length} questions</small>
+          <small>${world.items.filter(isPlayable).length} playable</small>
         </span>`;
       btn.addEventListener("click", () => startWorld(key));
       grid.appendChild(btn);
@@ -152,12 +155,26 @@
     return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
   }
 
+  function isPlayable(q) {
+    if (!q || !q.prompt) return false;
+    if (q.type === "match") return Array.isArray(q.pairs) && q.pairs.length >= 2;
+    if (q.type === "mc" || q.type === "blank") {
+      return Array.isArray(q.choices) && q.choices.length >= 2 && !!q.answer;
+    }
+    return false;
+  }
+
   function startWorld(key) {
     const world = worlds[key];
     if (!world || !world.items.length) return;
+    const playable = world.items.filter(isPlayable);
+    if (!playable.length) {
+      alert("This world has no playable questions yet.");
+      return;
+    }
     state.worldKey = key;
-    const n = key === "all" ? 10 : Math.min(8, world.items.length);
-    state.queue = shuffle(world.items).slice(0, n);
+    const n = key === "all" ? 12 : playable.length;
+    state.queue = shuffle(playable).slice(0, n);
     state.index = 0;
     state.stars = 0;
     state.streak = 0;
@@ -200,29 +217,22 @@
       renderMatch(stage, q);
       return;
     }
-    if (q.type === "practice") {
-      renderPractice(stage, q);
-      return;
-    }
-    if (q.type === "pick") {
-      renderPick(stage, q);
-      return;
-    }
 
-    // mc / blank
+    // mc / blank — always graded
     const promptHtml =
-      q.type === "blank" && q.prompt.includes("___")
+      (q.type === "blank" || (q.prompt || "").includes("___"))
         ? escapeHtml(q.prompt).replace("___", '<span class="blank-mark">?</span>')
         : escapeHtml(q.prompt);
 
     const choices = shuffle(q.choices || []);
-    const tip = q.instruction
-      ? `<p class="q-tip">${escapeHtml(q.instruction)}</p>`
-      : "";
+    if (choices.length < 2 || !q.answer) {
+      state.index += 1;
+      renderQuestion();
+      return;
+    }
 
     stage.innerHTML = `
       <div class="q-emoji">${q.emoji || "✨"}</div>
-      ${tip}
       <p class="q-prompt">${promptHtml}</p>
       <div class="choices" role="group" aria-label="Answers">
         ${choices
@@ -235,53 +245,6 @@
 
     stage.querySelectorAll(".choice").forEach((btn) => {
       btn.addEventListener("click", () => onChoice(btn, q));
-    });
-  }
-
-  function renderPick(stage, q) {
-    const tip = q.instruction
-      ? `<p class="q-tip">${escapeHtml(q.instruction)}</p>`
-      : `<p class="q-tip">Tap the best word. Then keep leaping!</p>`;
-    const choices = shuffle(q.choices || q.wordBank || []);
-    stage.innerHTML = `
-      <div class="q-emoji">${q.emoji || "🔤"}</div>
-      ${tip}
-      <p class="q-prompt">${escapeHtml(q.prompt)}</p>
-      <div class="choices">
-        ${choices
-          .map(
-            (c) =>
-              `<button type="button" class="choice" data-answer="${escapeAttr(c)}">${escapeHtml(c)}</button>`
-          )
-          .join("")}
-      </div>`;
-    stage.querySelectorAll(".choice").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        if (state.locked) return;
-        state.locked = true;
-        btn.classList.add("correct");
-        onCorrect();
-        nextQuestion(650);
-      });
-    });
-  }
-
-  function renderPractice(stage, q) {
-    const tip = q.instruction
-      ? `<p class="q-tip">${escapeHtml(q.instruction)}</p>`
-      : `<p class="q-tip">Read it out loud, then tap Done!</p>`;
-    const meta = q.page ? `<p class="q-meta">p.${q.page}${q.section ? " · " + q.section : ""}</p>` : "";
-    stage.innerHTML = `
-      <div class="q-emoji">📖</div>
-      ${tip}
-      <p class="q-prompt">${escapeHtml(q.prompt)}</p>
-      ${meta}
-      <button type="button" class="btn primary btn-done" id="btn-done">Done! ⭐</button>`;
-    $("btn-done").addEventListener("click", () => {
-      if (state.locked) return;
-      state.locked = true;
-      onCorrect();
-      nextQuestion(500);
     });
   }
 
