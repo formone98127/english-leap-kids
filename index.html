@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="English Leap Kids — a fun English learning game for age 6, based on Longman English Leap 2A." />
+  <title>English Leap Kids</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@600;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦸</text></svg>" />
+</head>
+<body>
+  <div class="sky" aria-hidden="true">
+    <div class="star s1"></div>
+    <div class="star s2"></div>
+    <div class="star s3"></div>
+    <div class="cloud c1"></div>
+    <div class="cloud c2"></div>
+    <div class="planet"></div>
+  </div>
+
+  <main id="app">
+    <!-- HOME -->
+    <section id="screen-home" class="screen active">
+      <header class="hero">
+        <div class="mascot" aria-hidden="true">🦸</div>
+        <h1 class="brand">English Leap</h1>
+        <p class="tagline">Fun English games for little explorers</p>
+      </header>
+      <div class="home-stats">
+        <span id="total-stars">⭐ 0</span>
+        <span id="best-streak">🔥 0</span>
+      </div>
+      <nav class="world-grid" id="world-grid" aria-label="Choose a world"></nav>
+      <p class="credit">Inspired by Longman English Leap 2A</p>
+    </section>
+
+    <!-- PLAY -->
+    <section id="screen-play" class="screen">
+      <header class="play-bar">
+        <button type="button" class="btn-icon" id="btn-home" aria-label="Home">🏠</button>
+        <div class="play-meta">
+          <span id="play-world"></span>
+          <div class="progress"><i id="progress-fill"></i></div>
+        </div>
+        <div class="score-pill">⭐ <span id="play-stars">0</span></div>
+      </header>
+      <div id="question-stage" class="question-stage"></div>
+      <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
+    </section>
+
+    <!-- RESULT -->
+    <section id="screen-result" class="screen">
+      <div class="result-card">
+        <div class="mascot big" aria-hidden="true">🎉</div>
+        <h2>Super Leap!</h2>
+        <p id="result-summary"></p>
+        <div class="result-stars" id="result-stars"></div>
+        <div class="result-actions">
+          <button type="button" class="btn primary" id="btn-again">Play again</button>
+          <button type="button" class="btn secondary" id="btn-worlds">More worlds</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="confetti" aria-hidden="true"></div>
+
+  <script src="data/questions.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
